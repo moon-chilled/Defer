@@ -1,4 +1,4 @@
 This library implements a 'Defer' statement in c, allowing statements to run at
-return time, generally to do cleanup.  It is analogous to 'defer' in Go or
-'scope(exit)' in D.  Integrating it into your codebase is simple; see demo.c
-for example usage.
+function return time, generally to do cleanup.  It is similar to 'defer' in Go
+and to 'scope(exit)' in D, but note that it does not care about lexical scopes.
+Integrating it into your codebase is simple; see demo.c for example usage.

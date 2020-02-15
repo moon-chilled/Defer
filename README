@@ -2,3 +2,7 @@ This library implements a 'Defer' statement in c, allowing statements to run at
 function return time, generally to do cleanup.  It is similar to 'defer' in Go
 and to 'scope(exit)' in D, but note that it does not care about lexical scopes.
 Integrating it into your codebase is simple; see demo.c for example usage.
+
+Note: this is likely to be noticeably faster with compilers that support the GNU
+C extensions; if you are on windows and performance is something you care about,
+try Clang or MinGW.

@@ -3,10 +3,10 @@
 
 #include <setjmp.h>
 
-#if defined(__GNUC__)
+#ifdef __GNUC__
 
 #define Deferral \
-size_t _num_deferrals = 0; \
+unsigned _num_deferrals = 0; \
 void *_defer_return_loc = 0, *_deferrals[24] = {0}; /* TODO: make this number configurable? */ \
 
 #define Defer(block) _Defer(block, __COUNTER__)
@@ -44,7 +44,7 @@ void *_defer_return_loc = 0, *_deferrals[24] = {0}; /* TODO: make this number co
 #else
 
 #define Deferral \
-size_t _num_deferrals = 0; \
+unsigned _num_deferrals = 0; \
 jmp_buf _defer_return_loc = {0}, _deferrals[24] = {0}; /* TODO: make this number configurable? */
 
 #define Defer(block) do { \

@@ -7,7 +7,7 @@
 
 #define Deferral \
 unsigned _num_deferrals = 0; \
-void *_defer_return_loc, *_deferrals[24]; /* TODO: make this number configurable? */ \
+void *_defer_return_loc = 0, *_deferrals[24] = {0}; /* TODO: make this number configurable? */ \
 
 #define Defer(block) _Defer(block, __COUNTER__)
 
@@ -44,8 +44,8 @@ void *_defer_return_loc, *_deferrals[24]; /* TODO: make this number configurable
 #else
 
 #define Deferral \
-volatile unsigned _num_deferrals = 0; \
-jmp_buf _defer_return_loc, _deferrals[24]; /* TODO: make this number configurable? */
+unsigned _num_deferrals = 0; \
+jmp_buf _defer_return_loc = {0}, _deferrals[24] = {0}; /* TODO: make this number configurable? */
 
 #define Defer(block) do { \
 	if (setjmp(_deferrals[_num_deferrals++])) { \
@@ -72,7 +72,6 @@ jmp_buf _defer_return_loc, _deferrals[24]; /* TODO: make this number configurabl
 
 /* for compatibility */
 # define ReturnN Return()
-
 #else
 # define Return(val) do { \
 	if (setjmp(_defer_return_loc)) { \

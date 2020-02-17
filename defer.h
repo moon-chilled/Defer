@@ -1,13 +1,11 @@
 #ifndef DEFER_H
 #define DEFER_H
 
-#include <setjmp.h>
-
-#ifdef __GNUC__
+#if defined(__GNUC__) || defined(__TINYC__)
 
 #define Deferral \
-unsigned _num_deferrals = 0; \
-void *_defer_return_loc = 0, *_deferrals[24] = {0}; /* TODO: make this number configurable? */ \
+unsigned char _num_deferrals = 0; \
+void *_defer_return_loc = 0, *_deferrals[32] = {0}; /* TODO: make this number configurable? */ \
 
 #define Defer(block) _Defer(block, __COUNTER__)
 
@@ -37,13 +35,15 @@ void *_defer_return_loc = 0, *_deferrals[24] = {0}; /* TODO: make this number co
 	_defer_fini_ ## n: \
 	return
 
-#else
+#else /* !__GNUC__ && !__TINYCC__ */
+
+#include <setjmp.h>
 
 #warning You are using the unsafe longjmp()-based defer implementation.  Expect bugs if you don't know what you're doing.
 
 #define Deferral \
-volatile unsigned _num_deferrals = 0; \
-jmp_buf _defer_return_loc = {0}, _deferrals[24] = {0}; /* TODO: make this number configurable? */
+volatile unsigned char _num_deferrals = 0; \
+jmp_buf _defer_return_loc = {0}, _deferrals[32] = {0}; /* TODO: make this number configurable? */
 
 #define Defer(block) do { \
 	if (setjmp(_deferrals[_num_deferrals++])) { \
@@ -56,6 +56,7 @@ jmp_buf _defer_return_loc = {0}, _deferrals[24] = {0}; /* TODO: make this number
 	} \
 } while (0)
 
+/* TODO: better to have that break or not?  Need to check asm output */
 #define Return do { \
 	if (setjmp(_defer_return_loc)) break; \
 \

@@ -15,36 +15,34 @@ void *_defer_return_loc = 0, *_deferrals[24] = {0}; /* TODO: make this number co
 
 #define _Defer(block, n) do { \
 	_deferrals[_num_deferrals++] = && _defer_tokpaste(_defer_ini, n); \
-	goto _defer_tokpaste(_defer_fini_, n); \
-	_defer_tokpaste(_defer_ini, n): \
-	block; \
-	if (_num_deferrals) { \
-		goto *_deferrals[--_num_deferrals]; \
-	} else { \
-		goto *_defer_return_loc; \
+	if (0) { \
+		_defer_tokpaste(_defer_ini, n): \
+		block; \
+		if (_num_deferrals) { \
+			goto *_deferrals[--_num_deferrals]; \
+		} else { \
+			goto *_defer_return_loc; \
+		} \
 	} \
-	_defer_tokpaste(_defer_fini_, n): ;\
 } while (0)
 
-#define Return(...) _Return(__COUNTER__, __VA_ARGS__)
+#define Return _Return(__COUNTER__)
 
-#define _Return(n, ...) do { \
+#define _Return(n) \
 	if (_num_deferrals) { \
 		_defer_return_loc = && _defer_fini_ ## n; \
 		goto *_deferrals[--_num_deferrals]; \
 	} \
 \
 	_defer_fini_ ## n: \
-	return __VA_ARGS__; \
-} while (0)
-
-/* for compatibility */
-#define ReturnN Return()
+	return
 
 #else
 
+#warning You are using the unsafe longjmp()-based defer implementation.  Expect bugs if you don't know what you're doing.
+
 #define Deferral \
-unsigned _num_deferrals = 0; \
+volatile unsigned _num_deferrals = 0; \
 jmp_buf _defer_return_loc = {0}, _deferrals[24] = {0}; /* TODO: make this number configurable? */
 
 #define Defer(block) do { \
@@ -58,41 +56,13 @@ jmp_buf _defer_return_loc = {0}, _deferrals[24] = {0}; /* TODO: make this number
 	} \
 } while (0)
 
-#if defined(__STDC_VERSION__) &&  __STDC_VERSION__ >= 199901L
-# define Return(...) do { \
-	if (setjmp(_defer_return_loc)) { \
-		return __VA_ARGS__; \
-	} \
+#define Return do { \
+	if (setjmp(_defer_return_loc)) break; \
+\
 	if (_num_deferrals) { \
 		longjmp(_deferrals[--_num_deferrals], 1); \
-	} else { \
-		longjmp(_defer_return_loc, 1); /* should this just be 'return val'? */\
 	} \
-} while (0)
-
-/* for compatibility */
-# define ReturnN Return()
-#else
-# define Return(val) do { \
-	if (setjmp(_defer_return_loc)) { \
-		return val; \
-	} \
-	if (_num_deferrals) { \
-		longjmp(_deferrals[--_num_deferrals], 1); \
-	} else { \
-		longjmp(_defer_return_loc, 1); /* should this just be 'return val'? */\
-	} \
-} while (0)
-
-# define ReturnN do { \
-	if (setjmp(_defer_return_loc)) return; \
-	if (_num_deferrals) { \
-		longjmp(_deferrals[--_num_deferrals], 1); \
-	} else { \
-		return; \
-	} \
-} while (0)
-#endif
+} while (0); return
 
 #endif /* __GNUC__ */
 

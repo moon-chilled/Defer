@@ -17,8 +17,7 @@ void test1(void) {Deferral
 
 	strcpy(x, "Hello world");
 
-	/* you can replace this with Return() if your compiler supports c99 */
-	ReturnN;
+	Return;
 }
 
 int test2(void) {Deferral
@@ -29,7 +28,7 @@ int test2(void) {Deferral
 	 * good way around this.
 	 */
 	Defer(puts("2"));
-	Return(puts("3"));
+	Return puts("3");
 }
 
 int main(void) {

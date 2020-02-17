@@ -7,7 +7,13 @@
 unsigned char _num_deferrals = 0; \
 void *_defer_return_loc = 0, *_deferrals[32] = {0}; /* TODO: make this number configurable? */ \
 
-#define Defer(block) _Defer(block, __COUNTER__)
+#ifdef __PCC__
+# define Defer(block) _Defer(block, __LINE__)
+# define Return _Return(__LINE__)
+#else
+# define Defer(block) _Defer(block, __COUNTER__)
+# define Return _Return(__COUNTER__)
+#endif
 
 #define _defer_tokpaste(a, b) a ## b
 
@@ -23,8 +29,6 @@ void *_defer_return_loc = 0, *_deferrals[32] = {0}; /* TODO: make this number co
 		} \
 	} \
 } while (0)
-
-#define Return _Return(__COUNTER__)
 
 #define _Return(n) \
 	if (_num_deferrals) { \

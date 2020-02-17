@@ -1,11 +1,15 @@
 #ifndef DEFER_H
 #define DEFER_H
 
+#ifndef DEFER_MAX_DEFERRED_STATEMENTS
+# define DEFER_MAX_DEFERRED_STATEMENTS 32
+#endif
+
 #if defined(__GNUC__) || defined(__TINYC__)
 
 #define Deferral \
 unsigned char _num_deferrals = 0; \
-void *_defer_return_loc = 0, *_deferrals[32] = {0}; /* TODO: make this number configurable? */ \
+void *_defer_return_loc = 0, *_deferrals[DEFER_MAX_DEFERRED_STATEMENTS] = {0};
 
 #ifdef __PCC__
 # define Defer(block) _Defer(block, __LINE__)
@@ -43,11 +47,15 @@ void *_defer_return_loc = 0, *_deferrals[32] = {0}; /* TODO: make this number co
 
 #include <setjmp.h>
 
-#warning You are using the unsafe longjmp()-based defer implementation.  Expect bugs if you don't know what you're doing.
+#ifdef _MSC_VER
+# pragma message("You are using the unsafe longjmp()-based defer implementation.  Expect bugs if you don't know what you're doing.")
+#else
+# warning You are using the unsafe longjmp()-based defer implementation.  Expect bugs if you don't know what you're doing.
+#endif
 
 #define Deferral \
 volatile unsigned char _num_deferrals = 0; \
-jmp_buf _defer_return_loc = {0}, _deferrals[32] = {0}; /* TODO: make this number configurable? */
+jmp_buf _defer_return_loc = {0}, _deferrals[DEFER_MAX_DEFERRED_STATEMENTS] = {0};
 
 #define Defer(block) do { \
 	if (setjmp(_deferrals[_num_deferrals++])) { \

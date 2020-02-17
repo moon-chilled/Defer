@@ -6,3 +6,7 @@ Integrating it into your codebase is simple; see demo.c for example usage.
 Note: this is likely to be noticeably faster with compilers that support the GNU
 C extensions; if you are on windows and performance is something you care about,
 try Clang or MinGW.
+
+Note: at the moment, a maximum of 32 deferred statements per function is
+supported.  To change this number, #define DEFER_MAX_DEFERRED_STATEMENTS to a
+different value before including defer.h (or via a compiler flag).

@@ -4,8 +4,10 @@
 
 #include "defer.h"
 
-void test1(void) {Deferral
+void test1(void) {Deferral;
 	char *x = malloc(0x100);
+
+        BeginDeferral;
 	Defer(free(x));
 
 	/* legal because deconstruction happens in reverse order */
@@ -18,9 +20,11 @@ void test1(void) {Deferral
 	strcpy(x, "Hello world");
 
 	Return;
+        EndDeferral;
 }
 
-int test2(void) {Deferral
+int test2(void) {Deferral;
+        BeginDeferral;
 	puts("1");
 
 	/* caveat: unlike in other programming languages, the return expression
@@ -29,6 +33,7 @@ int test2(void) {Deferral
 	 */
 	Defer(puts("2"));
 	Return puts("3");
+        EndDeferral;
 }
 
 int main(void) {

@@ -5,78 +5,57 @@
 # define DEFER_MAX_DEFERRED_STATEMENTS 32
 #endif
 
-#if defined(__GNUC__) || defined(__TINYC__)
+/*
+ * Usage:
+ *
+ *      type
+ *      function_name(formals)
+ *      {
+ *              Deferral;
+ *              <locals here>;
+ *
+ *              BeginDeferral;
+ *              <code here>
+ *              <at least one Return statement must appear>
+ *              EndDeferral;
+ *              <NO CODE HERE>
+ *      }
+ */
 
 #define Deferral \
 unsigned char _num_deferrals = 0; \
-void *_defer_return_loc = 0, *_deferrals[DEFER_MAX_DEFERRED_STATEMENTS] = {0};
+long _next_block = 0; \
+long _defer_return_loc = -1; \
+long _deferrals[DEFER_MAX_DEFERRED_STATEMENTS] = {0}
+#define BeginDeferral _next_cleanup: switch (_next_block) { \
+        default: if (_defer_return_loc > 0) { _next_block = _defer_return_loc; goto _next_cleanup; }; break; \
+        case 0: do { 0
+#define EndDeferral } while (0); abort(); }
 
-#ifdef __PCC__
-# define Defer(block) _Defer(block, __LINE__)
-# define Return _Return(__LINE__)
-#else
-# define Defer(block) _Defer(block, __COUNTER__)
-# define Return _Return(__COUNTER__)
-#endif
+#define Defer(block) _Defer(block, __LINE__)
+#define Return _Return(__LINE__)
 
-#define _defer_tokpaste(a, b) a ## b
-
-#define _Defer(block, n) do { \
-	_deferrals[_num_deferrals++] = && _defer_tokpaste(_defer_ini, n); \
+#define _Defer(block, n) \
+        if (_num_deferrals >= DEFER_MAX_DEFERRED_STATEMENTS) abort(); \
+	_deferrals[_num_deferrals++] = n; \
 	if (0) { \
-		_defer_tokpaste(_defer_ini, n): \
+                case n: \
 		block; \
 		if (_num_deferrals) { \
-			goto *_deferrals[--_num_deferrals]; \
+			_next_block = _deferrals[--_num_deferrals]; \
+                        goto _next_cleanup; \
 		} else { \
-			goto *_defer_return_loc; \
+                        _next_block = -1; \
+                        goto _next_cleanup; \
 		} \
-	} \
-} while (0)
+	}
 
 #define _Return(n) \
-	if (_num_deferrals) { \
-		_defer_return_loc = && _defer_fini_ ## n; \
-		goto *_deferrals[--_num_deferrals]; \
+        case n: if (_num_deferrals) { \
+                _defer_return_loc = n; \
+                _next_block = _deferrals[--_num_deferrals]; \
+                goto _next_cleanup; \
 	} \
-\
-	_defer_fini_ ## n: \
-	return
-
-#else /* !__GNUC__ && !__TINYCC__ */
-
-#include <setjmp.h>
-
-#ifdef _MSC_VER
-# pragma message("You are using the unsafe longjmp()-based defer implementation.  Expect bugs if you don't know what you're doing.")
-#else
-# warning You are using the unsafe longjmp()-based defer implementation.  Expect bugs if you don't know what you're doing.
-#endif
-
-#define Deferral \
-volatile unsigned char _num_deferrals = 0; \
-jmp_buf _defer_return_loc = {0}, _deferrals[DEFER_MAX_DEFERRED_STATEMENTS] = {0};
-
-#define Defer(block) do { \
-	if (setjmp(_deferrals[_num_deferrals++])) { \
-		block; \
-		if (_num_deferrals) { \
-			longjmp(_deferrals[--_num_deferrals], 1); \
-		} else { \
-			longjmp(_defer_return_loc, 1); \
-		} \
-	} \
-} while (0)
-
-/* TODO: better to have that break or not?  Need to check asm output */
-#define Return do { \
-	if (setjmp(_defer_return_loc)) break; \
-\
-	if (_num_deferrals) { \
-		longjmp(_deferrals[--_num_deferrals], 1); \
-	} \
-} while (0); return
-
-#endif /* __GNUC__ */
+        return
 
 #endif /*DEFER_H*/

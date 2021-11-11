@@ -36,12 +36,9 @@ void *_defer_return_loc = 0, *_deferrals[DEFER_MAX_DEFERRED_STATEMENTS] = {0};
 
 #define _Return(n) \
 	if (_num_deferrals) { \
-		_defer_return_loc = && _defer_fini_ ## n; \
+		_defer_return_loc = && _defer_tokpaste(_defer_fini_, n); \
 		goto *_deferrals[--_num_deferrals]; \
-	} \
-\
-	_defer_fini_ ## n: \
-	return
+	} else _defer_tokpaste(_defer_fini_, n): return
 
 #else /* !__GNUC__ && !__TINYCC__ */
 
@@ -68,14 +65,10 @@ jmp_buf _defer_return_loc = {0}, _deferrals[DEFER_MAX_DEFERRED_STATEMENTS] = {0}
 	} \
 } while (0)
 
-/* TODO: better to have that break or not?  Need to check asm output */
-#define Return do { \
-	if (setjmp(_defer_return_loc)) break; \
-\
-	if (_num_deferrals) { \
-		longjmp(_deferrals[--_num_deferrals], 1); \
-	} \
-} while (0); return
+#define Return \
+	if (!setjmp(_defer_return_loc)) { \
+		if (_num_deferrals) longjmp(_deferrals[--_num_deferrals], 1); \
+	} else return
 
 #endif /* __GNUC__ */
 
